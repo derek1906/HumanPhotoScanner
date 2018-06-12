@@ -11,12 +11,12 @@ import matplotlib.pyplot as plt
 
 class obj(object):
     def __init__(self, v):
-        self.v = v
+        self.value = v
 
     @classmethod
     def enc(cls, func):
         def _(*inputs):
-            output = func(*list(i.v if isinstance(i, obj) else i for i in inputs))
+            output = func(*list(i.value if isinstance(i, obj) else i for i in inputs))
             return obj(output)
         return _
 
