@@ -1,3 +1,4 @@
+import sys
 import math
 import numpy as np
 import numpy.linalg as la
@@ -31,7 +32,7 @@ def threshold(image, rgb):
         .reduce(obj.enc(lambda c1, c2: c1 * c2))
     )
 
-    return result.v
+    return result.value
 
 def inches_to_pixels(dpi, inches):
     return dpi * inches
@@ -107,16 +108,21 @@ def crop_and_save(raw_image, file_name, photo_shape, x, y, basis):
 
 
 
-def main():
-    image = Image.open("test2.jpeg")
-    dpi = 600
-    photo_shape = inches_to_pixels(dpi, 3.5), inches_to_pixels(dpi, 5)
+def main(input_image_name, dpi=600, height=3.5, width=5):
+    threshold_color = [230, 230, 230]
 
-    thr = threshold(image, [230, 230, 230])
+    # open image
+    image = Image.open(input_image_name)
+    # define photo shape in pixels
+    photo_shape = inches_to_pixels(dpi, height), inches_to_pixels(dpi, width)
 
+    # convert background pixels to False and the rest to True
+    thr = threshold(image, threshold_color)
     casted_thr = thr.astype(bool)
+    # assign labels to groups
     labeled = skimage.morphology.label(casted_thr, connectivity=2)
 
+    # filter insignificant groups and keep the largest four
     filtered = filter_max_occurances(labeled)
 
     # pic1 = filter_matrix(filtered, 3)
@@ -124,20 +130,26 @@ def main():
 
     hack = image.rotate(180)
 
+    # for the most significant four groups
     for i in range(1, 5):
+        # filter out pixels that are not in the current group
         pic_locations = np.where(filtered == i)
 
+        # find most significant component with PCA
         pca = sklearn.decomposition.PCA(n_components=2).fit(np.transpose(pic_locations))
         components = pca.components_
-
         comp_1, _ = components
+        # normalize basis
         if comp_1[0] < 0 and comp_1[1] > 0:
             comp_1[0] *= -1
             comp_1[1] *= -1
+
         print(i, comp_1)
+        # crop and save image
         crop_and_save(hack, "image2_%d.jpg" % i, photo_shape,
                       pic_locations[1], pic_locations[0], comp_1)
 
     plt.show()
 
-main()
+if __name__ == "__main__":
+    main(*sys.argv[1:]) # pylint: disable=E1120
