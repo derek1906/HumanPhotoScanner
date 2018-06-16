@@ -1,0 +1,9 @@
+node_modules/
+*.pyc
+__pycache__/
+*.db
+.vscode/
+
+test images/
+
+web/dist/*

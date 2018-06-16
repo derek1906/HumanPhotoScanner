@@ -1,0 +1,41 @@
+const path = require("path");
+const webpack = require("webpack");
+
+/**
+ * Optimize JS files with webpack.
+ */
+
+let config = {
+    entry: "./src/scripts/index.js",
+    output: {
+        filename: "./static/bundle.js",
+        path: path.resolve(__dirname, "../dist")
+    },
+    mode: "development",
+    context: path.resolve(__dirname, '../'),
+    module: {
+        rules: [{
+            test: /\.jsx?$/,
+            exclude: /node_modules/,
+            use: {
+                loader: "babel-loader"
+            }
+        }]
+    }
+};
+
+module.exports = {
+    task_func: function webpack_build() {
+        return new Promise((res, rej) => {
+            webpack(config, (err, stats) => {
+                if (err) {
+                    console.warn("Webpack", err);
+                    rej(err);
+                } else {
+                    res();
+                }
+            });
+        });
+    },
+    config: config
+};
