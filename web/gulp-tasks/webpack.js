@@ -13,6 +13,7 @@ let config = {
     },
     mode: "development",
     context: path.resolve(__dirname, '../'),
+    devtool: 'source-map',
     module: {
         rules: [{
             test: /\.jsx?$/,
@@ -20,6 +21,21 @@ let config = {
             use: {
                 loader: "babel-loader"
             }
+        }, {
+            test: /\.css$/,
+            exclude: /node_modules/,
+            use: [{
+                loader: "style-loader"
+            }, {
+                loader: "css-loader",
+                options: {
+                    modules: true,
+                    importLoaders: 1,
+                    localIdentName: "[name]_[local]_[hash:base64]",
+                    sourceMap: true,
+                    minimize: true
+                }
+            }]
         }]
     }
 };

@@ -1,0 +1,7 @@
+let ACTIONS = {
+    ADD_TODO: "ADD_TODO",
+    MODIFY_TODO: "MODIFY_TODO",
+    REMOVE_TODO: "REMOVE_TODO"
+};
+
+export default ACTIONS;

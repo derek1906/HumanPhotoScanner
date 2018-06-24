@@ -5,15 +5,18 @@ Crowd-sourced tool for old photo meta data identification, including:
 - Location
 - Cropping
 
+Work in progress.
+
 ## Dependencies
 
 ### Development
 - npm
-- Webpack
+- Webpack 4+
 - Gulp
 - Babel
 
 ### Server side
+- Python 3.6+
 - Flask
 - Flask-SQLAlchemy
 - sqlite3
@@ -41,3 +44,8 @@ There are several pre-made npm shortcuts:
     npm run build      # build (prod)
     npm run build-dev  # build (dev)
     npm run watch      # build (dev) and watch for changes
+
+### Running the Code
+Run `server.py` with python:
+
+    python server.py

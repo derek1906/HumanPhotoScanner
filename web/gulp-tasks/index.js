@@ -8,7 +8,7 @@ const auto_build = require("./auto_build");
  * Build production
  */
 gulp.task("build", gulp.series(
-    function(done) {
+    function set_webpack_mode_to_production(done) {
         webpack.config.mode = "production";
         done();
     },
@@ -20,7 +20,7 @@ gulp.task("build", gulp.series(
  * Build development
  */
 gulp.task("build-dev", gulp.series(
-    function (done) {
+    function set_webpack_mode_to_development(done) {
         webpack.config.mode = "development";
         done();
     },
