@@ -6,9 +6,9 @@
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
         "build": "NODE_ENV=production gulp build --gulpfile gulp-tasks",
-        "build-dev": "NODE_ENV=production gulp build-dev --gulpfile gulp-tasks",
+        "build-dev": "NODE_ENV=development gulp build-dev --gulpfile gulp-tasks",
         "clean": "NODE_ENV=production gulp clean --gulpfile gulp-tasks",
-        "watch": "NODE_ENV=production gulp watch --gulpfile gulp-tasks"
+        "watch": "NODE_ENV=development gulp watch --gulpfile gulp-tasks"
     },
     "keywords": [],
     "private": true,
@@ -31,6 +31,7 @@
     },
     "dependencies": {
         "@material-ui/core": "^1.2.3",
+        "@material-ui/icons": "^1.1.0",
         "prop-types": "^15.6.1",
         "react": "^16.4.1",
         "react-dom": "^16.4.1",

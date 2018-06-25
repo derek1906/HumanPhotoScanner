@@ -1,20 +1,39 @@
 import React from "react";
-import AppBar from "@material-ui/core/AppBar";
-import Toolbar from "@material-ui/core/Toolbar";
-import Typography from "@material-ui/core/Typography";
+import * as react_redux from "react-redux";
+import PlaylistAdd from "@material-ui/icons/PlaylistAdd";
+
+import TitleBar from "../components/TitleBar.jsx";
 import MainTodoList from "../components/MainTodoList.jsx";
 
-export default function Main(props){
+import * as todosActions from "../actions/todos";
+
+function Main(props){
     return (
         <React.Fragment>
-            <AppBar position="static">
-                <Toolbar>
-                    <Typography variant="title" color="inherit">Todo List</Typography>
-                </Toolbar>
-            </AppBar>
-            <div>
+            <TitleBar 
+                titleText="Todo List"
+                menuItems={[{
+                    text: "Add Todo",
+                    icon: <PlaylistAdd />,
+                    onClick: () => props.onTodoAdded("Woot woot")
+                }]}
+            />
+            <div style={{overflowY: "scroll", flex: 1}}>
                 <MainTodoList />
             </div>
         </React.Fragment>
     );
 };
+
+export default react_redux.connect(
+    state => {
+        return {}
+    },
+    dispatch => {
+        return {
+            onTodoAdded: content => {
+                dispatch(todosActions.addTodo(content));
+            }
+        }
+    }
+)(Main);

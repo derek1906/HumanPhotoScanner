@@ -5,6 +5,7 @@ import { Provider } from 'react-redux';
 import thunkMiddleware from 'redux-thunk';
 import logger from 'redux-logger';
 import { composeWithDevTools } from 'redux-devtools-extension';
+import { HashRouter } from "react-router-dom";
 
 
 import App from "./components/App.jsx";
@@ -27,7 +28,9 @@ store.dispatch(todoActions.addTodo("World"));
 document.addEventListener("DOMContentLoaded", () => {
     ReactDOM.render(
         <Provider store={store}>
-            <App />
+            <HashRouter>
+                <App />
+            </HashRouter>
         </Provider>
     , document.getElementById("root"));
 });

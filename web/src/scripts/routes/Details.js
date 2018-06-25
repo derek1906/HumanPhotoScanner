@@ -2,6 +2,9 @@ import React from "react";
 import * as react_redux from "react-redux";
 import PropTypes from "prop-types";
 
+import TitleBar from "../components/TitleBar.jsx";
+
+
 class Details extends React.Component {
     static propTypes = {
         todos: PropTypes.object.isRequired
@@ -12,10 +15,15 @@ class Details extends React.Component {
 
         return (
             <React.Fragment>
-                <h1>Todo Details</h1>
-                <ul>
-                    <li>Number of stored todos: {numOfTodos}</li>
-                </ul>
+
+                <TitleBar
+                    titleText="Todo Details"
+                />
+                <div>
+                    <ul>
+                        <li>Number of stored todos: {numOfTodos}</li>
+                    </ul>
+                </div>
             </React.Fragment>
         );
     }
