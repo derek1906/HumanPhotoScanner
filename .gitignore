@@ -5,5 +5,7 @@ __pycache__/
 .vscode/
 
 test images/
+raw/*
+pending/*
 
 web/dist/*

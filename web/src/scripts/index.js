@@ -7,7 +7,6 @@ import logger from 'redux-logger';
 import { composeWithDevTools } from 'redux-devtools-extension';
 import { HashRouter } from "react-router-dom";
 
-
 import App from "./components/App.jsx";
 import root_reducer from "./reducers/root.js";
 import * as todoActions from "./actions/todos";
