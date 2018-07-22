@@ -9,6 +9,7 @@ import sklearn.preprocessing
 
 
 def threshold(image, rgb):
+    """Apply threshold on image on a per channel basis"""
     # split into 3 channels
     channels = image.split()
     # apply threshold
@@ -24,50 +25,56 @@ def threshold(image, rgb):
 
 
 def inches_to_pixels(dpi, inches):
+    """Convert inches to pixels with given DPI"""
     return dpi * inches
 
 
-def filter_max_occurances(labeled):
+def filter_max_occurances(labeled, number_of_keys=4):
+    """Filter max `number_of_keys` occurances"""
     unique, counts = np.unique(labeled, return_counts=True)
     stat = dict(zip(unique, counts))
 
     # index 0 (background) is not counted
     stat[0] = 0
 
-    top_four_keys = sorted(unique, key=lambda e: stat[e], reverse=True)[:4]
-    print(top_four_keys, [stat[k] for k in top_four_keys])
+    top_keys = sorted(unique, key=lambda e: stat[e], reverse=True)[:number_of_keys]
+    print("Top %d keys: " % number_of_keys, top_keys, [stat[k] for k in top_keys])
 
     new_array = np.ndarray(labeled.shape)
-    for i, k in enumerate(top_four_keys, 1):
+    for i, k in enumerate(top_keys, 1):
         new_array[np.where(labeled == k)] = i
 
     return new_array
 
 
 def filter_matrix(matrix, value):
+    """Mask out part of matrix that has a value other than `value`"""
     new_matrix = matrix.copy()
     new_matrix[new_matrix != value] = 0
 
     return new_matrix
 
 
-def rotate_points(x, y, rad):
-    new_x = x * math.cos(rad) - y * math.sin(rad)
-    new_y = x * math.sin(rad) + y * math.cos(rad)
+def rotate_points(coord_x, coord_y, rad):
+    """Rotate a point or points in a numpy array"""
+    new_x = coord_x * math.cos(rad) - coord_y * math.sin(rad)
+    new_y = coord_x * math.sin(rad) + coord_y * math.cos(rad)
 
     return new_x, new_y
 
 
-def find_maximas(xs, ys):
+def find_maximas(coords_x, coords_y):
+    """Find maxs and mins in xs and ys"""
     return {
-        "x_max": xs.max(),
-        "x_min": xs.min(),
-        "y_max": ys.max(),
-        "y_min": ys.min()
+        "x_max": coords_x.max(),
+        "x_min": coords_x.min(),
+        "y_max": coords_y.max(),
+        "y_min": coords_y.min()
     }
 
 
 def find_photos(input_image_name, dpi=600, height=3.5, width=5):
+    """Find photos in input image"""
     threshold_color = [230, 230, 230]
 
     # open image
@@ -117,15 +124,7 @@ def find_photos(input_image_name, dpi=600, height=3.5, width=5):
         half_sized_comp_1 = comp_1 * photo_shape[0] / 2
         half_sized_comp_2 = comp_2 * photo_shape[1] / 2
 
-        corner_1 = center_pic_location + half_sized_comp_1 + half_sized_comp_2
-        corner_2 = center_pic_location + half_sized_comp_1 - half_sized_comp_2
-        corner_3 = center_pic_location - half_sized_comp_1 - half_sized_comp_2
-        corner_4 = center_pic_location - half_sized_comp_1 + half_sized_comp_2
-
-        corners = np.array([corner_1, corner_2, corner_3, corner_4])
-
         top_left_corner = center_pic_location + half_sized_comp_1 + half_sized_comp_2
-        top_right_corner = center_pic_location + half_sized_comp_1 - half_sized_comp_2
         rotation_angle = np.arctan2(-half_sized_comp_2[0], -half_sized_comp_2[1])
 
         photos.append({
@@ -140,7 +139,7 @@ def find_photos(input_image_name, dpi=600, height=3.5, width=5):
 def crop_image(input_image, top_left, rotation, dimension):
     """Crop image given the transformation. Input describes a free bounding box over
     the input image.
-    
+
     Args:
         input_image: Image
         top_left: top_left coordinates in pixels (x, y)

@@ -1,13 +1,16 @@
+"""DB APIs"""
 import os
 from io import BytesIO
+
+import PIL
 
 from initialization import db
 import entities
 import image_processing
-import PIL
 
 def request_unprocessed_photos(session_id, limit=2):
     """Request photos that have not been processed."""
+    # pylint: disable=C0121
     photos = (entities.Photo.query
               .outerjoin(entities.Processing)
               .filter(entities.Photo.filename == None)
@@ -18,7 +21,7 @@ def request_unprocessed_photos(session_id, limit=2):
     for photo in photos:
         processing = entities.Processing(
             photo=photo,
-            by_session_id=session_id    
+            by_session_id=session_id
         )
         db.session.add(processing)
 
@@ -64,7 +67,8 @@ def get_cropped_photo_by_id(photo_id):
 
     return ret
 
-def update_photo_by_id(photo_id=None, photo_attrs={}, extra_attrs={}):
+def update_photo_by_id(photo_id=None, photo_attrs={}, extra_attrs={}):  # pylint: disable=W0102
+    """Update photo by id or create new photo"""
     new_photo = photo_id is None
 
     if new_photo:

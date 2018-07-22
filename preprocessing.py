@@ -1,9 +1,11 @@
+"""Preprocessing"""
 import os
+from pprint import pprint
+
 import entities
 from initialization import db
 import dbapis
 import image_processing
-from pprint import pprint
 
 
 def process_pending_photos():
@@ -35,7 +37,7 @@ def process_pending_photos():
                                                     width=5)
         pprint(found_photos)
 
-        for i, photo_detail in enumerate(found_photos):
+        for part, photo_detail in enumerate(found_photos):
             print("Processing photo part %d" % i)
 
             dbapis.update_photo_by_id(photo_id=None, photo_attrs={
@@ -45,7 +47,7 @@ def process_pending_photos():
                 "top_left_y": photo_detail["top_left"][1],
                 "dimension_x": photo_detail["dimension"][0],
                 "dimension_y": photo_detail["dimension"][1],
-                "part": i
+                "part": part
             }, extra_attrs={
                 "date_initialized": db.func.now()
             })

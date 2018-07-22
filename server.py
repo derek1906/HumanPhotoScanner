@@ -3,9 +3,6 @@ import time
 import uuid
 import logging
 
-logging.basicConfig()
-logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
-
 import flask
 
 import entities
@@ -14,6 +11,9 @@ import dbapis
 import serverapis
 import preprocessing
 
+
+logging.basicConfig()
+logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 def get_session():
     """Creates new session if not exists."""
@@ -37,9 +37,10 @@ def get_session():
 
 @app.route("/")
 def home():
-    current_session = get_session()
+    """Home"""
+    # current_session = get_session()
 
-    for photo in entities.RawPhoto.query:
+    for photo in entities.RawPhoto.query.all():
         print(photo)
 
     return flask.render_template("index.html")
@@ -109,16 +110,18 @@ def get_current_processing_batch():
 
 @app.route("/static/<path:path>")
 def static_files(path):
+    """Static files"""
     return flask.send_from_directory("./web/dist/static", path)
 
 
 @app.route("/dynamic/rawphoto/<int:raw_photo_id>")
 def get_raw_photo(raw_photo_id):
+    """Return raw photo by raw photo id"""
     try:
         raw_photo = dbapis.get_raw_photo_by_id(raw_photo_id)
     except KeyError:
         flask.abort(404)
-        
+
     response = flask.make_response(raw_photo.read())
     response.content_type = "image/jpeg"
 
@@ -127,6 +130,7 @@ def get_raw_photo(raw_photo_id):
 
 @app.route("/dynamic/photo/<int:photo_id>")
 def get_photo(photo_id):
+    """Return photo by photo id"""
     try:
         photo = dbapis.get_cropped_photo_by_id(photo_id)
     except KeyError:
@@ -139,11 +143,12 @@ def get_photo(photo_id):
 
 
 @app.after_request
-def add_header(r):
-    r.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    r.headers["Pragma"] = "no-cache"
-    r.headers["Expires"] = "0"
-    return r
+def add_header(request):
+    """Add no cache header after every request"""
+    request.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    request.headers["Pragma"] = "no-cache"
+    request.headers["Expires"] = "0"
+    return request
 
 
 if __name__ == "__main__":
