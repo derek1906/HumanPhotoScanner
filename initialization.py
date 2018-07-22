@@ -7,7 +7,7 @@ from flask_sqlalchemy import SQLAlchemy
 
 # Flask app
 app = Flask(
-    __name__,
+    "CrowdSourcedPhotoIdentifier",
     template_folder=os.path.abspath("./web/dist/pages"),
     static_folder=None
 )

@@ -1,13 +1,17 @@
 """Server"""
 import time
 import uuid
+import logging
+
+logging.basicConfig()
+logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 import flask
 
 import entities
 from initialization import app, current_sessions, db
 import dbapis
-
+import serverapis
 import preprocessing
 
 
@@ -56,30 +60,51 @@ def request_new_batch():
     already_processing_photos = dbapis.get_current_processing_photos(current_session_id)
     if already_processing_photos:
         # is already processing some photos
-        return flask.jsonify([{
-            "id": raw_photo.id,
-            "filename": raw_photo.filename
-        } for raw_photo in already_processing_photos]), 405
+        return serverapis.list_of_photos(already_processing_photos), 405
 
     # request new photos
-    raw_photos = dbapis.request_available_raw_photos(current_session_id)
+    photos = dbapis.request_unprocessed_photos(current_session_id)
 
-    return flask.jsonify([{
-        "id": raw_photo.id,
-        "filename": raw_photo.filename
-    } for raw_photo in raw_photos])
+    return serverapis.list_of_photos(photos)
+
+
+@app.route("/api/submit_batch", methods=["POST"])
+def submit_batch():
+    """Submit batch."""
+    current_session = get_session()
+    current_session_id = current_session["session_id"]
+
+    payload = flask.request.get_json()
+
+    if not isinstance(payload, (tuple, list)):
+        flask.abort(400)
+
+    submitted_batch = {photo["photo_id"]: photo for photo in payload}
+    submitted_photo_ids = set(submitted_batch.keys())
+
+    current_processing_photos = dbapis.get_current_processing_photos(current_session_id)
+    current_processing_photo_ids = set(photo.id for photo in current_processing_photos)
+
+    if submitted_photo_ids ^ current_processing_photo_ids:
+        # extra photo ids
+        flask.abort(400)
+
+    try:
+        serverapis.apply_update_batch(submitted_batch)
+    except (KeyError, IndexError):
+        # look up error
+        flask.abort(400)
+
+    return serverapis.success()
 
 
 @app.route("/api/get_current_processing_batch")
 def get_current_processing_batch():
     """Get current batch."""
     current_session = get_session()
-    raw_photos = dbapis.get_current_processing_photos(current_session["session_id"])
+    photos = dbapis.get_current_processing_photos(current_session["session_id"])
 
-    return flask.jsonify([{
-        "id": raw_photo.id,
-        "filename": raw_photo.filename
-    } for raw_photo in raw_photos])
+    return serverapis.list_of_photos(photos)
 
 
 @app.route("/static/<path:path>")
@@ -87,15 +112,30 @@ def static_files(path):
     return flask.send_from_directory("./web/dist/static", path)
 
 
-@app.route("/rawphoto/<int:raw_photo_id>")
+@app.route("/dynamic/rawphoto/<int:raw_photo_id>")
 def get_raw_photo(raw_photo_id):
-    raw_photos = list(entities.RawPhoto.query.filter(entities.RawPhoto.id == raw_photo_id))
-    
-    if not raw_photos:
+    try:
+        raw_photo = dbapis.get_raw_photo_by_id(raw_photo_id)
+    except KeyError:
         flask.abort(404)
-        return
         
-    return flask.send_from_directory("./raw", raw_photos[0].filename)
+    response = flask.make_response(raw_photo.read())
+    response.content_type = "image/jpeg"
+
+    return response
+
+
+@app.route("/dynamic/photo/<int:photo_id>")
+def get_photo(photo_id):
+    try:
+        photo = dbapis.get_cropped_photo_by_id(photo_id)
+    except KeyError:
+        flask.abort(404)
+
+    response = flask.make_response(photo.read())
+    response.content_type = "image/jpeg"
+
+    return response
 
 
 @app.after_request
@@ -107,7 +147,7 @@ def add_header(r):
 
 
 if __name__ == "__main__":
-    entities.Processing.query.delete()
-    entities.Photo.query.delete()
     preprocessing.process_pending_photos()
-    app.run(debug=True, host="0.0.0.0", port=8000)
+    db.session.query(entities.Processing).delete()
+    db.session.commit()
+    app.run(debug=True, host="0.0.0.0", port=8000, threaded=True)

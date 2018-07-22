@@ -2,37 +2,26 @@ import sys
 import math
 import numpy as np
 import numpy.linalg as la
-from PIL import Image
-from functional import seq
+from PIL import ImageFile, Image
 import skimage.morphology
 import skimage.transform
 import sklearn.decomposition
+import sklearn.preprocessing
 import matplotlib.pyplot as plt
 
 
-class obj(object):
-    def __init__(self, v):
-        self.value = v
-
-    @classmethod
-    def enc(cls, func):
-        def _(*inputs):
-            output = func(*list(i.value if isinstance(i, obj) else i for i in inputs))
-            return obj(output)
-        return _
-
 def threshold(image, rgb):
+    # split into 3 channels
     channels = image.split()
-
-    result = (
-        seq(channels)
-        .zip(rgb)
-        .map(obj.enc(lambda v: v[0].point(lambda p: int(p < v[1]))))
-        .map(obj.enc(np.asarray))
-        .reduce(obj.enc(lambda c1, c2: c1 * c2))
-    )
-
-    return result.value
+    # apply threshold
+    resulting_channels = [
+        channel.point(lambda p, thres=channel_threshold: p < thres)
+        for channel, channel_threshold in zip(channels, rgb)
+    ]
+    # convert to numpy arrays
+    resulting_channels = [np.asarray(channel) for channel in resulting_channels]
+    # get product
+    return np.prod(resulting_channels, axis=0)
 
 def inches_to_pixels(dpi, inches):
     return dpi * inches
@@ -49,6 +38,8 @@ def rad_to_deg(rad):
 def filter_max_occurances(labeled):
     unique, counts = np.unique(labeled, return_counts=True)
     stat = dict(zip(unique, counts))
+
+    # index 0 (background) is not counted
     stat[0] = 0
 
     top_four_keys = sorted(unique, key=lambda e: stat[e], reverse=True)[:4]
@@ -107,14 +98,13 @@ def crop_and_save(raw_image, file_name, photo_shape, x, y, basis):
     cropped_image.save(file_name)
 
 
-
 def main(input_image_name, dpi=600, height=3.5, width=5):
     threshold_color = [230, 230, 230]
 
     # open image
     image = Image.open(input_image_name)
     # define photo shape in pixels
-    photo_shape = inches_to_pixels(dpi, height), inches_to_pixels(dpi, width)
+    photo_shape = inches_to_pixels(dpi, max(width, height)), inches_to_pixels(dpi, min(width, height))
 
     # convert background pixels to False and the rest to True
     thr = threshold(image, threshold_color)
@@ -125,29 +115,86 @@ def main(input_image_name, dpi=600, height=3.5, width=5):
     # filter insignificant groups and keep the largest four
     filtered = filter_max_occurances(labeled)
 
-    # pic1 = filter_matrix(filtered, 3)
-    # plt.matshow(pic1)
-
-    hack = image.rotate(180)
+    plt.imshow(image)
 
     # for the most significant four groups
     for i in range(1, 5):
-        # filter out pixels that are not in the current group
-        pic_locations = np.where(filtered == i)
+        print("Processing %d/%d" % (i, 4))
+        # grab current group
+        identified_pic = filtered.copy()
+        identified_pic[identified_pic != i] = 0
+        pic_locations = np.transpose(np.where(identified_pic == i))
+
+        hull = skimage.morphology.convex_hull_image(identified_pic)
+        hull_locations = np.transpose(np.where(hull))
+
+        max_pic_location = np.amax(pic_locations, axis=0)
+        min_pic_location = np.amin(pic_locations, axis=0)
+        center_pic_location = np.average([min_pic_location, max_pic_location], axis=0)
+
+        # plt.plot(hull_locations[:, 1],
+        #          hull_locations[:, 0], '-', lw=2, alpha=.3)
+        plt.plot(center_pic_location[1], center_pic_location[0], 'o', lw=10)
 
         # find most significant component with PCA
-        pca = sklearn.decomposition.PCA(n_components=2).fit(np.transpose(pic_locations))
-        components = pca.components_
-        comp_1, _ = components
-        # normalize basis
-        if comp_1[0] < 0 and comp_1[1] > 0:
-            comp_1[0] *= -1
-            comp_1[1] *= -1
+        pca = sklearn.decomposition.PCA(n_components=2).fit(hull_locations)
+        components = sklearn.preprocessing.normalize(pca.components_)
+        comp_1, comp_2 = components
 
-        print(i, comp_1)
-        # crop and save image
-        crop_and_save(hack, "image2_%d.jpg" % i, photo_shape,
-                      pic_locations[1], pic_locations[0], comp_1)
+        comp_angle_1 = (np.arctan2(comp_1[1], comp_1[0]) + 0) % np.pi
+        comp_angle_2 = (np.arctan2(comp_2[1], comp_2[0]) + np.pi / 2) % np.pi
+        weighted_avg_angle = np.average([comp_angle_1, comp_angle_2], weights=photo_shape)
+        comp_1 = np.array(rotate_points(1, 0, weighted_avg_angle))
+        comp_2 = np.array(rotate_points(1, 0, weighted_avg_angle + np.pi / 2))
+
+        half_sized_comp_1 = comp_1 * photo_shape[0] / 2
+        half_sized_comp_2 = comp_2 * photo_shape[1] / 2
+
+        corner_1 = center_pic_location + half_sized_comp_1 + half_sized_comp_2
+        corner_2 = center_pic_location + half_sized_comp_1 - half_sized_comp_2
+        corner_3 = center_pic_location - half_sized_comp_1 - half_sized_comp_2
+        corner_4 = center_pic_location - half_sized_comp_1 + half_sized_comp_2
+
+        corners = np.array([corner_1, corner_2, corner_3, corner_4])
+
+        plt.plot(corners[:,1], corners[:,0], 'x', lw=1)
+        plt.plot([center_pic_location[1], center_pic_location[1] + half_sized_comp_1[1]],
+                 [center_pic_location[0], center_pic_location[0] + half_sized_comp_1[0]],
+                 'r-')
+        plt.plot([center_pic_location[1], center_pic_location[1] + half_sized_comp_2[1]],
+                 [center_pic_location[0], center_pic_location[0] + half_sized_comp_2[0]],
+                 'b-')
+        plt.text(center_pic_location[1], center_pic_location[0], str(i), fontsize=12)
+
+        print(weighted_avg_angle * 180 / np.pi)
+
+        top_left_corner = center_pic_location + half_sized_comp_1 + half_sized_comp_2
+        top_right_corner = center_pic_location + half_sized_comp_1 - half_sized_comp_2
+        rotation_angle = np.arctan2(-half_sized_comp_2[0], -half_sized_comp_2[1])
+
+        print("Top left:", top_left_corner)
+        print("Top right:", top_right_corner)
+
+        plt.plot(top_left_corner[1], top_left_corner[0], 'ro', lw=10)
+        plt.plot(top_right_corner[1], top_right_corner[0], 'bo', lw=10)
+        plt.text(top_right_corner[1], top_right_corner[0], "%.2f" % (rotation_angle * 180 / np.pi), fontsize=12)
+
+        print(half_sized_comp_2)
+
+        continue
+
+        transformation = np.array([
+            [ np.cos(np.pi / 4), np.sin(np.pi / 4), top_left_corner[1]],
+            [-np.sin(np.pi / 4), np.cos(np.pi / 4), top_left_corner[0]],
+        ])
+
+        print(transformation)
+
+        processed_image = image.transform(
+            image.size, Image.AFFINE, transformation.flatten())
+        plt.imshow(processed_image)
+        plt.show()
+
 
     plt.show()
 

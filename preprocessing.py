@@ -1,8 +1,10 @@
 import os
 import entities
 from initialization import db
+import dbapis
 import image_processing
 from pprint import pprint
+
 
 def process_pending_photos():
     """Process pending photos."""
@@ -27,23 +29,28 @@ def process_pending_photos():
 
         # process new image
         print("Processing raw photo %d/%d" % (i + 1, len(pending_files)))
-        photo_details = image_processing.compute_windows(target_filename)
-        pprint(photo_details)
+        found_photos = image_processing.find_photos(target_filename,
+                                                    dpi=600,
+                                                    height=3.5,
+                                                    width=5)
+        pprint(found_photos)
 
-        for i, photo_detail in enumerate(photo_details):
+        for i, photo_detail in enumerate(found_photos):
             print("Processing photo part %d" % i)
-            photo = entities.Photo(source_raw_photo=raw_photo,
-                                   rotation=photo_detail["rotation"],
-                                   center_x=photo_detail["center"]["x"],
-                                   center_y=photo_detail["center"]["y"],
-                                   dimension_x=photo_detail["dimension"]["x"],
-                                   dimension_y=photo_detail["dimension"]["y"],
-                                   part=i)
-            db.session.add(photo)
+
+            dbapis.update_photo_by_id(photo_id=None, photo_attrs={
+                "source_raw_photo": raw_photo,
+                "rotation": photo_detail["rotation"],
+                "top_left_x": photo_detail["top_left"][0],
+                "top_left_y": photo_detail["top_left"][1],
+                "dimension_x": photo_detail["dimension"][0],
+                "dimension_y": photo_detail["dimension"][1],
+                "part": i
+            }, extra_attrs={
+                "date_initialized": db.func.now()
+            })
 
     db.session.commit()
-
-    pprint(list(entities.Photo.query))
 
     print("Imported %d new raw photos." % len(new_raw_photos))
     return new_raw_photos

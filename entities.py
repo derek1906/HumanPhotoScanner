@@ -8,7 +8,9 @@ class RawPhoto(db.Model):
     filename = db.Column(db.String)
     created_date = db.Column(db.DateTime, default=db.func.now())
 
-    photos = db.relationship("Photo", backref=db.backref("source_raw_photo", lazy=True))
+    photos = db.relationship("Photo",
+                             cascade="all,delete",
+                             backref=db.backref("source_raw_photo", lazy=True))
 
     def __repr__(self):
         return "<RawPhoto(id=%s, filename='%s')>" % (self.id, self.filename)
@@ -23,8 +25,8 @@ class Photo(db.Model):
     # rotation in radians
     rotation = db.Column(db.Float)
     # translation in pixels relative to the raw photo
-    center_x = db.Column(db.Float)
-    center_y = db.Column(db.Float)
+    top_left_x = db.Column(db.Float)
+    top_left_y = db.Column(db.Float)
     # dimension
     dimension_x = db.Column(db.Integer)
     dimension_y = db.Column(db.Integer)
@@ -35,6 +37,14 @@ class Photo(db.Model):
     # cropped filename
     filename = db.Column(db.String, nullable=True)
     created_date = db.Column(db.DateTime, default=db.func.now())
+
+    photo_meta_list = db.relationship("PhotoMeta",
+                                      cascade="all,delete",
+                                    backref=db.backref("photo", lazy=True))
+
+    __table_args__ = (
+        db.ForeignKeyConstraint(["rawphoto_id"], ["RawPhoto.id"], ondelete="CASCADE"),
+    )
 
     def __repr__(self):
         return ("<Photo("
@@ -47,24 +57,23 @@ class Photo(db.Model):
 class Processing(db.Model):
     __tablename__ = "Processing"
 
-    class Status(Enum):
-        not_reviewed = 0
-        in_review = 1
-        reviewed = 2
-
-    id = db.Column(db.Integer, primary_key=True, autoincrement="auto")
-    rawphoto_id = db.Column(db.ForeignKey(RawPhoto.id))
-    photo_id = db.Column(db.ForeignKey(Photo.id))
+    #id = db.Column(db.Integer, primary_key=True, autoincrement="auto")
+    #photo_id = db.Column(db.ForeignKey(Photo.id), primary_key=True)
+    id = db.Column(db.ForeignKey(Photo.id), primary_key=True)
     by_session_id = db.Column(db.String)
-    status = db.Column(db.Enum(Status))
     created_date = db.Column(db.DateTime, default=db.func.now())
+
+    __table_args__ = (
+        db.ForeignKeyConstraint(["id"], ["Photo.id"], ondelete="CASCADE"),
+    )
+
+    photo = db.relationship("Photo")
 
     def __repr__(self):
         return ("<Processing("
                 "id=%s, "
-                "RawPhoto_id='%s', "
-                "ProcessedPhoto_id='%s', "
-                "by_session_id='%s')>") % (self.id, self.rawphoto_id, self.photo_id.name, self.by_session_id)
+                "Photo_id='%s', "
+                "by_session_id='%s')>") % (self.id, self.photo_id, self.by_session_id)
 
 
 class PhotoMeta(db.Model):
@@ -72,7 +81,11 @@ class PhotoMeta(db.Model):
 
     photo_id = db.Column(db.ForeignKey(Photo.id), primary_key=True)
     type = db.Column(db.String, primary_key=True)
-    value = db.Column(db.String)
+    value = db.Column(db.String, nullable=True)
+
+    __table_args__ = (
+        db.ForeignKeyConstraint(["photo_id"], ["Photo.id"], ondelete="CASCADE"),
+    )
 
     def __repr__(self):
         return ("<PhotoMeta("
