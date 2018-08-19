@@ -7,9 +7,8 @@ import logger from 'redux-logger';
 import { composeWithDevTools } from 'redux-devtools-extension';
 import { HashRouter } from "react-router-dom";
 
-import App from "./components/App.jsx";
-import root_reducer from "./reducers/root.js";
-import * as todoActions from "./actions/todos";
+import App from "./components/App";
+import root_reducer from "./reducers/root";
 
 const store = redux.createStore(
     root_reducer,
@@ -20,9 +19,6 @@ const store = redux.createStore(
         )
     )
 );
-
-store.dispatch(todoActions.addTodo("Hello"));
-store.dispatch(todoActions.addTodo("World"));
 
 document.addEventListener("DOMContentLoaded", () => {
     ReactDOM.render(

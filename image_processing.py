@@ -73,6 +73,10 @@ def find_maximas(coords_x, coords_y):
     }
 
 
+def get_image_size(input_image_name):
+    image = Image.open(input_image_name)
+    return image.size
+
 def find_photos(input_image_name, dpi=600, height=3.5, width=5):
     """Find photos in input image"""
     threshold_color = [230, 230, 230]
@@ -155,4 +159,20 @@ def crop_image(input_image, top_left, rotation, dimension):
     ])
 
     output_image = input_image.transform(dimension, Image.AFFINE, transformation.flatten())
+    return output_image
+
+
+def scale_down_image(input_image, max_dimensions):
+    """Scale down image by max dimensions.
+
+    Args:
+        input_image: Image
+        max_dimensions: Max dimensions tuple
+
+    Returns:
+        numpy array: New image
+    """
+    output_image = input_image.copy()
+    output_image.thumbnail(max_dimensions)
+
     return output_image

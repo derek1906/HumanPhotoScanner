@@ -6,10 +6,12 @@ import CssBaseline from '@material-ui/core/CssBaseline';
 import BottomNavigation from '@material-ui/core/BottomNavigation';
 import BottomNavigationAction from '@material-ui/core/BottomNavigationAction';
 import HomeIcon from '@material-ui/icons/Home';
-import InsertChartIcon from '@material-ui/icons/InsertChart';
+import DoneIcon from '@material-ui/icons/Done';
+import RateReview from '@material-ui/icons/RateReview';
 
 import MainPage from "../routes/Main";
-import DetailsPage from "../routes/Details";
+import ProcessedPhotosPage from "../routes/ProcessedPhotosPage";
+import PhotoProcesserPage from "../routes/PhotoProcesserPage";
 
 class App extends React.Component {
     static propTypes = {
@@ -23,9 +25,13 @@ class App extends React.Component {
         icon: <HomeIcon />,
         pathname: "/"
     }, {
-        tabName: "Details",
-        icon: <InsertChartIcon />,
-        pathname: "/details"
+        tabName: "Processed",
+        icon: <DoneIcon />,
+        pathname: "/processed"
+    }, {
+        tabName: "Process Batch",
+        icon: <RateReview />,
+        pathname: "/processer"
     }]
 
     getCurrentTabIndex(){
@@ -43,7 +49,8 @@ class App extends React.Component {
                 <div style={{display: "flex", flexDirection: "column", flex: 1}}>
                     <Switch>
                         <Route exact path="/" component={MainPage} />
-                        <Route exact path="/details" component={DetailsPage} />
+                        <Route exact path="/processed" component={ProcessedPhotosPage} />
+                        <Route exact path="/processer" component={PhotoProcesserPage} />
                     </Switch>
                 </div>
                 <BottomNavigation

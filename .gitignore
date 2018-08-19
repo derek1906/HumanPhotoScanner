@@ -7,5 +7,6 @@ __pycache__/
 test images/
 raw/*
 pending/*
+caches/*
 
 web/dist/*

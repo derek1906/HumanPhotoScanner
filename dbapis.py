@@ -8,7 +8,7 @@ from initialization import db
 import entities
 import image_processing
 
-def request_unprocessed_photos(session_id, limit=2):
+def request_unprocessed_photos(session_id, limit=3):
     """Request photos that have not been processed."""
     # pylint: disable=C0121
     photos = (entities.Photo.query
@@ -34,6 +34,19 @@ def get_current_processing_photos(session_id):
             .join(entities.Processing)
             .filter_by(by_session_id=session_id)
             .all())
+
+def cancel_current_processing_photos(session_id):
+    """Cancel current processing photos by a session."""
+    for processing in entities.Processing.query.filter_by(by_session_id=session_id):
+        db.session.delete(processing)
+
+    db.session.commit()
+
+def get_processed_photos(page=1, num_photos=20):
+    """Get processed photos."""
+    return (entities.Photo.query
+            .filter(entities.Photo.filename != None)
+            .paginate(page, per_page=num_photos, max_per_page=100, error_out=True))
 
 def get_raw_photo_by_id(raw_photo_id):
     """Get raw photo by RawPhoto ID."""
@@ -94,3 +107,18 @@ def update_photo_by_id(photo_id=None, photo_attrs={}, extra_attrs={}):  # pylint
 
     db.session.commit()
     return photo
+
+
+def get_random_photo(is_processed=None):
+    """Get random photo"""
+    if is_processed is True:
+        comp = lambda filename: filename != None
+    elif is_processed is False:
+        comp = lambda filename: filename == None
+    else:
+        comp = lambda _: True
+
+    return (entities.Photo.query
+            .filter(comp(entities.Photo.filename))
+            .order_by(db.func.random())
+            .first())

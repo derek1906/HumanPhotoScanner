@@ -1,12 +1,16 @@
 """Preprocessing"""
 import os
+from pathlib import Path
 from pprint import pprint
+
+from PIL import Image
 
 import entities
 from initialization import db
 import dbapis
 import image_processing
 
+caches_raw_photos_dir = Path()/"caches"/"rawphotos"
 
 def process_pending_photos():
     """Process pending photos."""
@@ -20,10 +24,13 @@ def process_pending_photos():
         if os.path.isfile(target_filename):
             raise OSError("Destination already exists")
 
-        # move to /raw
-        os.rename(source_filename, target_filename)
         # create a new RawPhoto
-        raw_photo = entities.RawPhoto(filename=filename)
+        raw_photo_size = image_processing.get_image_size(source_filename)
+        raw_photo = entities.RawPhoto(
+            filename=filename,
+            dimension_x=raw_photo_size[0],
+            dimension_y=raw_photo_size[1]
+        )
         # add to db
         db.session.add(raw_photo)
         # add to result lists
@@ -31,7 +38,7 @@ def process_pending_photos():
 
         # process new image
         print("Processing raw photo %d/%d" % (i + 1, len(pending_files)))
-        found_photos = image_processing.find_photos(target_filename,
+        found_photos = image_processing.find_photos(source_filename,
                                                     dpi=600,
                                                     height=3.5,
                                                     width=5)
@@ -51,6 +58,17 @@ def process_pending_photos():
             }, extra_attrs={
                 "date_initialized": db.func.now()
             })
+
+        db.session.flush()
+
+        # generate smaller versions
+        os.makedirs(caches_raw_photos_dir, exist_ok=True)
+        (image_processing
+            .scale_down_image(Image.open(source_filename), [1024, 1024])
+            .save(caches_raw_photos_dir/f"{raw_photo.id}.jpg"))
+
+        # move to /raw
+        os.rename(source_filename, target_filename)
 
     db.session.commit()
 

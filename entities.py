@@ -1,12 +1,16 @@
+"""Entities"""
 from initialization import db
-from enum import Enum
 
 class RawPhoto(db.Model):
+    """Raw photo"""
     __tablename__ = "RawPhoto"
 
-    id = db.Column(db.Integer, primary_key=True, autoincrement="auto")
-    filename = db.Column(db.String)
+    id = db.Column(db.Integer, primary_key=True, autoincrement="auto", index=True)
+    filename = db.Column(db.String, index=True)
     created_date = db.Column(db.DateTime, default=db.func.now())
+    # dimension
+    dimension_x = db.Column(db.Integer)
+    dimension_y = db.Column(db.Integer)
 
     photos = db.relationship("Photo",
                              cascade="all,delete",
@@ -15,11 +19,19 @@ class RawPhoto(db.Model):
     def __repr__(self):
         return "<RawPhoto(id=%s, filename='%s')>" % (self.id, self.filename)
 
+    def __json__(self):
+        return {
+            "id": self.id,
+            "filename": self.filename,
+            "dimensions": [self.dimension_x, self.dimension_y]
+        }
+
 
 class Photo(db.Model):
+    """Photo"""
     __tablename__ = "Photo"
 
-    id = db.Column(db.Integer, primary_key=True, autoincrement="auto")
+    id = db.Column(db.Integer, primary_key=True, autoincrement="auto", index=True)
     rawphoto_id = db.Column(db.ForeignKey(RawPhoto.id))
 
     # rotation in radians
@@ -35,12 +47,12 @@ class Photo(db.Model):
     part = db.Column(db.Integer)
 
     # cropped filename
-    filename = db.Column(db.String, nullable=True)
+    filename = db.Column(db.String, nullable=True, index=True)
     created_date = db.Column(db.DateTime, default=db.func.now())
 
     photo_meta_list = db.relationship("PhotoMeta",
                                       cascade="all,delete",
-                                    backref=db.backref("photo", lazy=True))
+                                      backref=db.backref("photo", lazy=True))
 
     __table_args__ = (
         db.ForeignKeyConstraint(["rawphoto_id"], ["RawPhoto.id"], ondelete="CASCADE"),
@@ -53,8 +65,23 @@ class Photo(db.Model):
                 "part=%s, "
                 "filename='%s')>") % (self.id, self.rawphoto_id, self.part, self.filename)
 
+    def __json__(self):
+        return {
+            "id": self.id,
+            "rawphoto_id": self.rawphoto_id,
+            "filename": self.filename,
+            "processed": bool(self.filename),
+            "meta": self.photo_meta_list,
+            "transformation": {
+                "rotation": self.rotation,
+                "top_left": [self.top_left_x, self.top_left_y],
+                "dimensions": [self.dimension_x, self.dimension_y]
+            }
+        }
+
 
 class Processing(db.Model):
+    """Processing"""
     __tablename__ = "Processing"
 
     #id = db.Column(db.Integer, primary_key=True, autoincrement="auto")
@@ -77,9 +104,10 @@ class Processing(db.Model):
 
 
 class PhotoMeta(db.Model):
+    """Photo meta data"""
     __tablename__ = "PhotoMeta"
 
-    photo_id = db.Column(db.ForeignKey(Photo.id), primary_key=True)
+    photo_id = db.Column(db.ForeignKey(Photo.id), primary_key=True, index=True)
     type = db.Column(db.String, primary_key=True)
     value = db.Column(db.String, nullable=True)
 
@@ -92,6 +120,12 @@ class PhotoMeta(db.Model):
                 "photo_id=%s, "
                 "type='%s', "
                 "value='%s'>") % (self.photo_id, self.type, self.value)
+
+    def __json__(self):
+        return {
+            "type": self.type,
+            "value": self.value
+        }
 
 
 # Create all tables
