@@ -35,3 +35,14 @@ export function getRawPhotoInfo(rawphoto_id) {
     return fetchWithCredentials("/api/info/rawphoto/" + encodeURIComponent(rawphoto_id))
         .then(res => res.json());
 }
+
+export function postBatch(batch) {
+    return fetchWithCredentials("/api/submit_batch", {
+        method: "POST",
+        body: JSON.stringify(batch),
+        headers: {
+            "Content-Type": "application/json"
+        }
+    })
+        .then(res => res.json());
+}

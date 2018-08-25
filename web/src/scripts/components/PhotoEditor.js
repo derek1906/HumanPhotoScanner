@@ -11,6 +11,11 @@ import Button from '@material-ui/core/Button';
 import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
 import CircularProgress from '@material-ui/core/CircularProgress';
+import Chip from '@material-ui/core/Chip';
+import IconButton from '@material-ui/core/IconButton';
+import RotateRight from '@material-ui/icons/RotateRight';
+import RotateLeft from '@material-ui/icons/RotateLeft';
+
 
 import { withContentRect } from 'react-measure';
 
@@ -20,7 +25,8 @@ import Vector from "../vector";
 const classes = {
     root: {
         display: "flex",
-        overflow: "hidden"
+        overflow: "hidden",
+        flex: 1
     },
     rawphotoContainter: {
         display: "flex",
@@ -113,11 +119,11 @@ class PhotoEditingField extends React.Component {
         }).isRequired,
         rawphoto: PropTypes.object.isRequired,
         photo: PropTypes.object.isRequired,
-        myscale: PropTypes.number
+        onUpdate: PropTypes.func
     };
 
     static defaultProps = {
-        myscale: 1
+        onUpdate: () => {}
     };
 
     computeTransformString() {
@@ -134,8 +140,6 @@ class PhotoEditingField extends React.Component {
             window_height: containerRect.height
         }, this.props.myscale);
 
-        console.log(actual);
-
         let m = [
             [Math.cos(actual.rotate) * actual.scale, Math.sin(actual.rotate) * actual.scale, actual.translate.x],
             [-Math.sin(actual.rotate) * actual.scale, Math.cos(actual.rotate) * actual.scale, actual.translate.y]
@@ -146,6 +150,42 @@ class PhotoEditingField extends React.Component {
             transform: `matrix(${m[0][0]}, ${m[1][0]}, ${m[0][1]}, ${m[1][1]}, ${m[0][2]}, ${m[1][2]})`,
             boundingBox: actual.boundingBox
         };
+    }
+
+    rotateCounterClockwise() {
+        let fullWidth = new Vector(1, 0).scale(this.props.photo.transformation.dimensions[0]).rotate(this.props.photo.transformation.rotation);
+
+        let newTopLeft = new Vector(this.props.photo.transformation.top_left[0], this.props.photo.transformation.top_left[1])
+            .add(fullWidth);
+        let newRotation = this.props.photo.transformation.rotation + Math.PI / 2;
+
+        this.props.onUpdate({
+            ...this.props.photo,
+            transformation: {
+                ...this.props.photo.transformation,
+                dimensions: [this.props.photo.transformation.dimensions[1], this.props.photo.transformation.dimensions[0]],
+                rotation: newRotation,
+                top_left: [newTopLeft.x, newTopLeft.y]
+            }
+        });
+    }
+
+    rotateClockwise() {
+        let fullHeight = new Vector(0, 1).scale(this.props.photo.transformation.dimensions[1]).rotate(this.props.photo.transformation.rotation);
+
+        let newTopLeft = new Vector(this.props.photo.transformation.top_left[0], this.props.photo.transformation.top_left[1])
+            .add(fullHeight);
+        let newRotation = this.props.photo.transformation.rotation - Math.PI / 2;
+
+        this.props.onUpdate({
+            ...this.props.photo,
+            transformation: {
+                ...this.props.photo.transformation,
+                dimensions: [this.props.photo.transformation.dimensions[1], this.props.photo.transformation.dimensions[0]],
+                rotation: newRotation,
+                top_left: [newTopLeft.x, newTopLeft.y]
+            }
+        });
     }
 
     render() {
@@ -163,6 +203,7 @@ class PhotoEditingField extends React.Component {
                             position: "absolute",
                             top: 0,
                             left: 0,
+                            transition: "transform 0.3s ease",
                             transform,
                             transformOrigin
                         }}
@@ -183,20 +224,71 @@ class PhotoEditingField extends React.Component {
             );
         }
 
+        let chips = this.props.photo.meta.map(({type, value}, i) => {
+            return (
+                <Chip
+                    key={i}
+                    label={`${type}: ${value}`}
+                    className={classes.chip}
+                />
+            );
+        });
+
         return (
-            <div 
-                ref={this.props.measureRef} 
+            <div
                 style={{
-                    width: "100%",
-                    position: "relative"
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "stretch",
+                    flex: 1
                 }}
             >
-                {content}
+                <div 
+                    ref={this.props.measureRef} 
+                    style={{
+                        width: "100%",
+                        position: "relative",
+                        flex: 1,
+                        overflow: "hidden"
+                    }}
+                >
+                    {content}
+                </div>
+                <div
+                    style={{
+                        display: "flex",
+                        flexDirection: "row"
+                    }}
+                >
+                    <div>{chips}</div>
+                    <div style={{flex: 1}} />
+                    <div>
+                        <IconButton
+                            aria-label="Rotate Clockwise"
+                            onClick={() => this.rotateClockwise()}
+                        >
+                            <RotateRight />
+                        </IconButton>
+                        <IconButton
+                            aria-label="Rotate Counter Clockwise"
+                            onClick={() => this.rotateCounterClockwise()}
+                        >
+                            <RotateLeft />
+                        </IconButton>
+                    </div>
+                </div>
             </div>
         );
     }
 }
-PhotoEditingField = withContentRect("client")(PhotoEditingField);
+PhotoEditingField = compose(
+    withStyles(theme => ({
+        chip: {
+            margin: theme.spacing.unit,
+        }
+    })),
+    withContentRect("client")
+)(PhotoEditingField);
 
 class PhotoEditor extends React.Component {
     constructor(props) {
@@ -260,6 +352,7 @@ class PhotoEditor extends React.Component {
         return <PhotoEditingField
             rawphoto={this.props.rawphotoInfoRepository[this.props.photo.rawphoto_id.toString()]}
             photo={this.props.photo}
+            onUpdate={this.props.onUpdate}
         />
     }
 

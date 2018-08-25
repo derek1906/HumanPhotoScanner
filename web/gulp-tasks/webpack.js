@@ -11,7 +11,7 @@ let config = {
         filename: "./static/bundle.js",
         path: path.resolve(__dirname, "../dist")
     },
-    mode: "development",
+    mode: "production",
     context: path.resolve(__dirname, '../'),
     devtool: 'source-map',
     module: {

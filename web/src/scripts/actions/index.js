@@ -1,4 +1,4 @@
-import { getGeneralInfo, getNewProcessingBatch, requestCancelBatch, getRawPhotoInfo } from "../api";
+import { getGeneralInfo, getNewProcessingBatch, requestCancelBatch, getRawPhotoInfo, postBatch } from "../api";
 
 let ACTIONS = {
     REQUEST_GENERAL_INFO: "REQUEST_GENERAL_INFO",
@@ -19,7 +19,9 @@ let ACTIONS = {
 
     EDITOR_PREVIOUS_PAGE: "EDITOR_PREV_PAGE",
     EDITOR_PREVIOUS_PAGE: "EDITOR_PREV_PAGE",
-    EDITOR_NEXT_PAGE: "EDITOR_NEXT_PAGE"
+    EDITOR_NEXT_PAGE: "EDITOR_NEXT_PAGE",
+
+    UPDATE_PHOTO: "UPDATE_PHOTO"
 };
 
 export default ACTIONS;
@@ -58,6 +60,35 @@ export function fetchNewBatch() {
             dispatch({
                 type: ACTIONS.FAILED_RECEIVE_NEW_BATCH
             });
+        });
+    };
+}
+
+export function submitBatch() {
+    return (dispatch, getState) => {
+        let { editor } = getState();
+        let batch = editor.processingPhotos.map(photo => {
+            return {
+                photo_id: photo.id,
+                photo_attrs: {
+                    rotation: photo.transformation.rotation,
+                    top_left: photo.transformation.top_left,
+                    dimensions: photo.transformation.dimensions
+                },
+                extra_attrs: {}
+            };
+        });
+
+        return postBatch(batch).then(res => {
+            // reset current processing photos
+            dispatch({
+                type: ACTIONS.RECEIVE_CANCEL_BATCH
+            });
+            // fetch new batch
+            dispatch(fetchNewBatch());
+        }, err => {
+            // todo: handle error
+            console.log(err);
         });
     };
 }
@@ -123,5 +154,13 @@ export function editorPreviousPage() {
 export function editorNextPage() {
     return {
         type: ACTIONS.EDITOR_NEXT_PAGE
+    };
+}
+
+export function updatePhoto(i, photo) {
+    return {
+        type: ACTIONS.UPDATE_PHOTO,
+        index: i,
+        photo: photo
     };
 }

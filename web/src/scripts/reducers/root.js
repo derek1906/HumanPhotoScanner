@@ -67,14 +67,17 @@ function editor(prevState={
                 ...prevState,
                 activeProcessingPhotoIndex: prevState.activeProcessingPhotoIndex + 1
             };
+
         case actions.EDITOR_PREVIOUS_PAGE:
             if (prevState.processingPhotos === null || prevState.activeProcessingPhotoIndex <= 0) {
                 throw new Error("Cannot go to previous page");
             }
+
             return {
                 ...prevState,
                 activeProcessingPhotoIndex: prevState.activeProcessingPhotoIndex - 1
             };
+
         case actions.REQUEST_NEW_BATCH:
             return {
                 ...prevState,
@@ -82,6 +85,7 @@ function editor(prevState={
                 processingPhotos: null,
                 isFetching: true
             };
+
         case actions.RECEIVE_NEW_BATCH:
             return {
                 ...prevState,
@@ -89,6 +93,7 @@ function editor(prevState={
                 processingPhotos: action.data,
                 isFetching: false
             };
+
         case actions.FAILED_RECEIVE_NEW_BATCH:
             return {
                 ...prevState,
@@ -96,13 +101,24 @@ function editor(prevState={
                 processingPhotos: null,
                 isFetching: false
             };
+
         case actions.REQUEST_CANCEL_BATCH:
         case actions.FAILED_RECEIVE_CANCEL_BATCH:
             return {
                 ...prevState
             };
+
         case actions.RECEIVE_CANCEL_BATCH:
             return editor(undefined, {});
+
+        case actions.UPDATE_PHOTO:
+            let newProcessingPhotos = [...prevState.processingPhotos];
+            newProcessingPhotos[action.index] = action.photo;
+            return {
+                ...prevState,
+                processingPhotos: newProcessingPhotos
+            };
+
         default:
             return prevState;
     }

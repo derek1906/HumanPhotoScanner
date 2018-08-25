@@ -42,8 +42,8 @@ def apply_update_batch(batch):
                 "rotation": photo_attrs["rotation"],
                 "top_left_x": photo_attrs["top_left"][0],
                 "top_left_y": photo_attrs["top_left"][1],
-                "dimension_x": photo_attrs["dimension"][0],
-                "dimension_y": photo_attrs["dimension"][1],
+                "dimension_x": photo_attrs["dimensions"][0],
+                "dimension_y": photo_attrs["dimensions"][1],
                 "filename": "photo_%d.jpg" % photo_id
             }, extra_attrs)
 

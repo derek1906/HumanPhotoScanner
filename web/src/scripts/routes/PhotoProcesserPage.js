@@ -17,7 +17,7 @@ import KeyboardArrowRight from '@material-ui/icons/KeyboardArrowRight';
 
 // Custom
 import PhotoEditor from "../components/PhotoEditor";
-import { editorNextPage, editorPreviousPage, fetchNewBatch, cancelBatch } from "../actions";
+import { editorNextPage, editorPreviousPage, fetchNewBatch, cancelBatch, updatePhoto, submitBatch } from "../actions";
 
 
 const styles = theme => ({
@@ -118,7 +118,7 @@ class PhotoProcesserPage extends React.Component {
 
         if (editor.activeProcessingPhotoIndex === editor.processingPhotos.length - 1) {
             nextButton = (
-                <Button size="small" onClick={() => console.log("Done!")}>
+                <Button size="small" onClick={this.props.submitBatch}>
                     Finish
                 </Button>
             );
@@ -144,7 +144,10 @@ class PhotoProcesserPage extends React.Component {
                 <PhotoEditor
                     className={this.props.classes.editor}
                     photo={activeEditingPhoto}
-                    onUpdate={console.log}
+                    onUpdate={photo => {
+                        console.log("Updated photo", photo);
+                        this.props.updatePhoto(editor.activeProcessingPhotoIndex, photo);
+                    }}
                 />
             </React.Fragment>
         );
@@ -179,7 +182,9 @@ export default compose(
         onNextPhoto: () => dispatch(editorNextPage()),
         onPreviousPhoto: () => dispatch(editorPreviousPage()),
         fetchNewBatch: () => dispatch(fetchNewBatch()),
-        cancelBatch: () => dispatch(cancelBatch())
+        cancelBatch: () => dispatch(cancelBatch()),
+        updatePhoto: (i, photo) => dispatch(updatePhoto(i, photo)),
+        submitBatch: () => dispatch(submitBatch())
     })),
     withStyles(styles),
     withRouter

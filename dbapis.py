@@ -8,7 +8,7 @@ from initialization import db
 import entities
 import image_processing
 
-def request_unprocessed_photos(session_id, limit=3):
+def request_unprocessed_photos(session_id, limit=5):
     """Request photos that have not been processed."""
     # pylint: disable=C0121
     photos = (entities.Photo.query

@@ -10,13 +10,20 @@ import { HashRouter } from "react-router-dom";
 import App from "./components/App";
 import root_reducer from "./reducers/root";
 
+// const store = redux.createStore(
+//     root_reducer,
+//     composeWithDevTools(
+//         redux.applyMiddleware(
+//             thunkMiddleware, 
+//             logger
+//         )
+//     )
+// );
+
 const store = redux.createStore(
     root_reducer,
-    composeWithDevTools(
-        redux.applyMiddleware(
-            thunkMiddleware, 
-            logger
-        )
+    redux.applyMiddleware(
+        thunkMiddleware
     )
 );
 
