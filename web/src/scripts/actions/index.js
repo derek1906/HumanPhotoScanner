@@ -1,4 +1,5 @@
 import { getGeneralInfo, getNewProcessingBatch, requestCancelBatch, getRawPhotoInfo, postBatch } from "../api";
+import moment from "moment";
 
 let ACTIONS = {
     REQUEST_GENERAL_INFO: "REQUEST_GENERAL_INFO",
@@ -75,7 +76,11 @@ export function submitBatch() {
                     top_left: photo.transformation.top_left,
                     dimensions: photo.transformation.dimensions
                 },
-                extra_attrs: {}
+                extra_attrs: {
+                    day_created: photo.date_created ? photo.date_created.day : "",
+                    month_created: photo.date_created ? photo.date_created.month : "",
+                    year_created: photo.date_created ? photo.date_created.year : ""
+                }
             };
         });
 

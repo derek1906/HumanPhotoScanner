@@ -60,7 +60,9 @@ class ProcessedPhotosPage extends React.Component {
                             this.state.photos.map(photo => {
                                 return (
                                     <GridListTile key={photo.id} cols={1}>
-                                        <img src={`/cached/photo/${photo.id}`} />
+                                        <a href={`/dynamic/photo/${photo.id}`}>
+                                            <img src={`/cached/photo/${photo.id}`} />
+                                        </a>
                                     </GridListTile>
                                 );
                             })

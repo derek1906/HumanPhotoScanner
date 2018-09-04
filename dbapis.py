@@ -15,6 +15,7 @@ def request_unprocessed_photos(session_id, limit=5):
               .outerjoin(entities.Processing)
               .filter(entities.Photo.filename == None)
               .filter(entities.Processing.id == None)
+              .order_by(entities.Photo.created_date)
               .limit(limit)
               .all())
 

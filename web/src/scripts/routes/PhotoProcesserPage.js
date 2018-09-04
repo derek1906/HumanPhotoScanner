@@ -4,6 +4,7 @@ import { connect } from "react-redux";
 import { compose } from "redux";
 import { withRouter } from "react-router-dom";
 import PropTypes from "prop-types";
+import moment from "moment";
 
 // Material UI
 import { withStyles } from "@material-ui/core";
@@ -40,6 +41,13 @@ const styles = theme => ({
 class PhotoProcesserPage extends React.Component {
     constructor(props) {
         super(props);
+        this.state = {
+            defaultCreatedDate: {
+                year: "",
+                month: "",
+                day: ""
+            }
+        };
     }
 
     componentDidMount() {
@@ -133,7 +141,7 @@ class PhotoProcesserPage extends React.Component {
         return (
             <React.Fragment>
                 <MobileStepper
-                    variant="progress"
+                    variant="dots"
                     steps={editor.processingPhotos.length}
                     position="static"
                     activeStep={editor.activeProcessingPhotoIndex}
@@ -144,9 +152,15 @@ class PhotoProcesserPage extends React.Component {
                 <PhotoEditor
                     className={this.props.classes.editor}
                     photo={activeEditingPhoto}
+                    defaultCreatedDate={this.state.defaultCreatedDate}
                     onUpdate={photo => {
-                        console.log("Updated photo", photo);
                         this.props.updatePhoto(editor.activeProcessingPhotoIndex, photo);
+
+                        if (photo.date_created) {
+                            this.setState({
+                                defaultCreatedDate: photo.date_created
+                            });
+                        }
                     }}
                 />
             </React.Fragment>

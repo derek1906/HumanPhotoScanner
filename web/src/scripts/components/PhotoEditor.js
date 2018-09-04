@@ -12,15 +12,28 @@ import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import Chip from '@material-ui/core/Chip';
+import TextField from '@material-ui/core/TextField';
 import IconButton from '@material-ui/core/IconButton';
 import RotateRight from '@material-ui/icons/RotateRight';
 import RotateLeft from '@material-ui/icons/RotateLeft';
 
-
 import { withContentRect } from 'react-measure';
 
+import moment from "moment";
 import Vector from "../vector";
 
+const YEARS = [];
+for (let i = 1960; i < 2060; i++) {
+    YEARS.push(i);
+}
+const MONTHS = [];
+for (let i = 0; i < 12; i++) {
+    MONTHS.push(i);
+}
+const DAYS = [];
+for (let i = 1; i < 32; i++) {
+    DAYS.push(i);
+}
 
 const classes = {
     root: {
@@ -119,12 +132,28 @@ class PhotoEditingField extends React.Component {
         }).isRequired,
         rawphoto: PropTypes.object.isRequired,
         photo: PropTypes.object.isRequired,
+        defaultCreatedDate: PropTypes.shape({
+            year: PropTypes.string,
+            month: PropTypes.string,
+            day: PropTypes.string
+        }).isRequired,
         onUpdate: PropTypes.func
     };
 
     static defaultProps = {
         onUpdate: () => {}
     };
+
+    componentDidMount() {
+        this.componentDidUpdate();
+    }
+
+    componentDidUpdate() {
+        console.log(this.props.photo)
+        if (!this.props.photo.date_created) {
+            this.setPhotoCreatedDate(this.props.defaultCreatedDate);
+        }
+    }
 
     computeTransformString() {
         let containerRect = this.props.contentRect.client;
@@ -188,8 +217,20 @@ class PhotoEditingField extends React.Component {
         });
     }
 
+    setPhotoCreatedDate(date) {
+        this.props.onUpdate({
+            ...this.props.photo,
+            date_created: {
+                ...(this.props.photo.date_created || {}),
+                ...date
+            }
+        });
+    }
+
     render() {
         let content;
+        let photoCreatedDate = this.props.photo.date_created || {};
+
         if (Object.keys(this.props.contentRect.client).length){
             let {transform, transformOrigin, boundingBox} = this.computeTransformString();
             content = (
@@ -224,16 +265,6 @@ class PhotoEditingField extends React.Component {
             );
         }
 
-        let chips = this.props.photo.meta.map(({type, value}, i) => {
-            return (
-                <Chip
-                    key={i}
-                    label={`${type}: ${value}`}
-                    className={classes.chip}
-                />
-            );
-        });
-
         return (
             <div
                 style={{
@@ -257,25 +288,53 @@ class PhotoEditingField extends React.Component {
                 <div
                     style={{
                         display: "flex",
-                        flexDirection: "row"
+                        flexDirection: "row",
+                        alignItems: "center"
                     }}
                 >
-                    <div>{chips}</div>
+                    <Typography>Y:</Typography>
+                    <TextField
+                        select 
+                        value={photoCreatedDate.year}
+                        SelectProps={{native: true}}
+                        onChange={e => this.setPhotoCreatedDate({year: e.target.value})}
+                    >
+                        <option key="unknown" value=""></option>
+                        {YEARS.map(year => <option key={year} value={year}>{year}</option>)}
+                    </TextField>
+                    <Typography>M:</Typography>
+                    <TextField
+                        select
+                        value={photoCreatedDate.month}
+                        SelectProps={{ native: true }}
+                        onChange={e => this.setPhotoCreatedDate({ month: e.target.value })}
+                    >
+                        <option key="unknown" value=""></option>
+                        {MONTHS.map(month => <option key={month} value={month}>{moment.months()[month]}</option>)}
+                    </TextField>
+                    <Typography>D:</Typography>
+                    <TextField
+                        select
+                        value={photoCreatedDate.day}
+                        SelectProps={{ native: true }}
+                        onChange={e => this.setPhotoCreatedDate({ day: e.target.value })}
+                    >
+                        <option key="unknown" value=""></option>
+                        {DAYS.map(day => <option key={day} value={day}>{day}</option>)}
+                    </TextField>
                     <div style={{flex: 1}} />
-                    <div>
-                        <IconButton
-                            aria-label="Rotate Clockwise"
-                            onClick={() => this.rotateClockwise()}
-                        >
-                            <RotateRight />
-                        </IconButton>
-                        <IconButton
-                            aria-label="Rotate Counter Clockwise"
-                            onClick={() => this.rotateCounterClockwise()}
-                        >
-                            <RotateLeft />
-                        </IconButton>
-                    </div>
+                    <IconButton
+                        aria-label="Rotate Clockwise"
+                        onClick={() => this.rotateClockwise()}
+                    >
+                        <RotateRight />
+                    </IconButton>
+                    <IconButton
+                        aria-label="Rotate Counter Clockwise"
+                        onClick={() => this.rotateCounterClockwise()}
+                    >
+                        <RotateLeft />
+                    </IconButton>
                 </div>
             </div>
         );
@@ -310,6 +369,11 @@ class PhotoEditor extends React.Component {
             }).isRequired
         }),
         onUpdate: PropTypes.func,
+        defaultCreatedDate: PropTypes.shape({
+            year: PropTypes.string,
+            month: PropTypes.string,
+            day: PropTypes.string
+        }).isRequired,
         classes: PropTypes.object
     }
 
@@ -352,6 +416,7 @@ class PhotoEditor extends React.Component {
         return <PhotoEditingField
             rawphoto={this.props.rawphotoInfoRepository[this.props.photo.rawphoto_id.toString()]}
             photo={this.props.photo}
+            defaultCreatedDate={this.props.defaultCreatedDate}
             onUpdate={this.props.onUpdate}
         />
     }

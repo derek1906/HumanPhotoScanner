@@ -1,4 +1,5 @@
 """Preprocessing"""
+import re
 import os
 from pathlib import Path
 from pprint import pprint
@@ -11,11 +12,20 @@ import dbapis
 import image_processing
 
 caches_raw_photos_dir = Path()/"caches"/"rawphotos"
+number_regex = re.compile(r"\d+")
+
+def _extract_number(filename):
+    match = number_regex.search(filename)
+    if not match:
+        return 0
+    return int(match.group(0))
 
 def process_pending_photos():
     """Process pending photos."""
+
     new_raw_photos = []
-    pending_files = os.listdir("./pending")
+    pending_files = sorted(os.listdir("./pending"),
+                           key=_extract_number)
 
     for i, filename in enumerate(pending_files):
         source_filename = os.path.join("./pending", filename)
