@@ -1,5 +1,4 @@
 import { getGeneralInfo, getNewProcessingBatch, requestCancelBatch, getRawPhotoInfo, postBatch } from "../api";
-import moment from "moment";
 
 let ACTIONS = {
     REQUEST_GENERAL_INFO: "REQUEST_GENERAL_INFO",

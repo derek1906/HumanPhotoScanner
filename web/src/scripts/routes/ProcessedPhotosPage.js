@@ -75,11 +75,10 @@ class ProcessedPhotosPage extends React.Component {
 };
 
 export default compose(
-    connect(state => {
-        return {}
-    }, dispatch => {
-        return {}
-    }),
+    connect(
+        state => ({}),
+        dispatch => ({})
+    ),
     withStyles(styles),
     withRouter
 )(ProcessedPhotosPage);
