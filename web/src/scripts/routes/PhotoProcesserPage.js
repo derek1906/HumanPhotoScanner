@@ -4,7 +4,6 @@ import { connect } from "react-redux";
 import { compose } from "redux";
 import { withRouter } from "react-router-dom";
 import PropTypes from "prop-types";
-import moment from "moment";
 
 // Material UI
 import { withStyles } from "@material-ui/core";
